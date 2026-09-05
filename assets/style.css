@@ -38,10 +38,6 @@ body {
     padding: 28px;
 }
 
-/* box-sizing: border-box is applied per-rule to classes we author,
-   never globally -- a global reset would also apply to elements
-   Plotly/react-select/rc-slider manage internally. */
-
 .header {
     box-sizing: border-box;
     background: var(--color-surface);
@@ -70,11 +66,6 @@ body {
     gap: 24px;
     align-items: flex-start;
 }
-
-/* Sidebar: amber panel. Default (dark) text color is used throughout
-   rather than overriding react-select/Dash-internal text classes --
-   dark text already reads fine against this light background, so
-   there's no need to fight library-internal class names for contrast. */
 
 .sidebar {
     box-sizing: border-box;
@@ -183,10 +174,6 @@ body {
     font-weight: 500;
     color: var(--color-accent-deep);
 }
-
-/* js-plotly-plot is Plotly's own live-managed root element, not a
-   wrapper we created. Only cosmetic properties Plotly never sets
-   inline belong here -- never width, height, or border. */
 
 .js-plotly-plot {
     background: var(--color-surface);
