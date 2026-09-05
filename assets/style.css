@@ -1,16 +1,28 @@
-@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@500;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap');
 
 :root {
-    --color-bg: #f3eee2;
+    --color-bg: #f5f4f0;
     --color-surface: #ffffff;
-    --color-ink: #1b1f24;
-    --color-ink-secondary: #6b6455;
-    --color-border: #e5e0d3;
+    --color-ink: #14171c;
+    --color-ink-secondary: #6b7280;
+    --color-border: #e7e5e0;
+
+    --color-panel-bg: #e4b726;
+    --color-panel-bg-alt: #f2b705;
+    --color-panel-border: #c98a06;
+    --color-panel-text: #1b1f24;
+    --color-panel-text-muted: #4a3c0d;
 
     --color-accent: #e3a008;
     --color-accent-deep: #b97d0a;
+    --color-accent-soft: #fcefd1;
 
-    --font-display: 'Archivo', 'Arial Narrow', sans-serif;
+    --color-positive: #1d9e75;
+    --color-positive-bg: #e1f5ee;
+    --color-negative: #e24b4a;
+    --color-negative-bg: #fcebeb;
+
+    --font-display: 'Space Grotesk', 'Arial Narrow', sans-serif;
     --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     --font-mono: 'JetBrains Mono', 'Consolas', monospace;
 }
@@ -23,37 +35,35 @@ body {
 }
 
 .app-container {
-    padding: 24px;
+    padding: 28px;
 }
 
-/* Our own components below use box-sizing: border-box individually,
-   scoped per-rule, rather than a global * reset -- a global reset would
-   also apply to elements rendered by Plotly/react-select/rc-slider,
-   which manage their own sizing internally and can conflict with it. */
+/* box-sizing: border-box is applied per-rule to classes we author,
+   never globally -- a global reset would also apply to elements
+   Plotly/react-select/rc-slider manage internally. */
 
 .header {
     box-sizing: border-box;
     background: var(--color-surface);
-    padding: 24px;
-    border-radius: 12px;
+    padding: 28px 32px;
+    border-radius: 20px;
     margin-bottom: 24px;
-    box-shadow: 0 1px 0 var(--color-border);
-    border-top: 3px solid var(--color-accent);
+    box-shadow: 0 1px 2px rgba(20, 23, 28, 0.04), 0 1px 0 var(--color-border);
 }
 
 .header h1 {
-    margin-top: 0;
-    margin-bottom: 8px;
+    margin: 0 0 10px 0;
     font-family: var(--font-display);
     font-weight: 700;
-    font-size: 28px;
-    letter-spacing: -0.01em;
+    font-size: 32px;
+    letter-spacing: -0.02em;
 }
 
 .header p {
-    max-width: 950px;
-    line-height: 1.5;
+    max-width: 900px;
+    line-height: 1.6;
     color: var(--color-ink-secondary);
+    font-size: 15px;
 }
 
 .main-layout {
@@ -62,41 +72,82 @@ body {
     align-items: flex-start;
 }
 
-/* Sidebar stays light -- this avoids needing to restyle react-select's
-   or rc-slider's internal elements at all, since their defaults already
-   assume a light background. Only the outer accent is custom. */
+/* Sidebar: amber panel. Default (dark) text color is used throughout
+   rather than overriding react-select/Dash-internal text classes --
+   dark text already reads fine against this light background, so
+   there's no need to fight library-internal class names for contrast. */
 
 .sidebar {
     box-sizing: border-box;
     width: 320px;
-    background: var(--color-surface);
-    padding: 20px;
-    border-radius: 12px;
-    box-shadow: 0 1px 0 var(--color-border);
-    border-left: 4px solid var(--color-accent);
+    background: var(--color-panel-bg);
+    padding: 24px;
+    border-radius: 20px;
     position: sticky;
-    top: 20px;
+    top: 24px;
 }
 
 .sidebar h3 {
     margin-top: 0;
     font-family: var(--font-display);
     font-weight: 700;
+    font-size: 18px;
 }
 
-.sidebar label {
+.sidebar > label {
     display: block;
-    margin-top: 18px;
+    margin-top: 20px;
     margin-bottom: 6px;
     font-weight: 500;
     font-size: 13px;
-    color: var(--color-ink-secondary);
+    color: var(--color-panel-text-muted);
+}
+
+.sidebar .Select-control {
+    background-color: var(--color-surface);
+    border-color: var(--color-panel-border);
+}
+
+.sidebar .Select-menu-outer {
+    background-color: var(--color-surface);
+    border-color: var(--color-panel-border);
+}
+
+.sidebar .is-focused .Select-control {
+    border-color: var(--color-accent-deep);
 }
 
 .sidebar input[type="checkbox"],
 .sidebar input[type="radio"] {
-    accent-color: var(--color-accent);
+    accent-color: var(--color-accent-deep);
     margin-right: 6px;
+}
+
+.sidebar .rc-slider-rail {
+    background-color: var(--color-panel-border);
+}
+
+.sidebar .rc-slider-track {
+    background-color: var(--color-accent-deep);
+}
+
+.sidebar .rc-slider-handle {
+    border-color: var(--color-accent-deep);
+    background-color: var(--color-surface);
+}
+
+.sidebar .rc-slider-handle:hover,
+.sidebar .rc-slider-handle:focus {
+    border-color: var(--color-ink);
+}
+
+.sidebar .rc-slider-mark-text {
+    color: var(--color-panel-text-muted);
+}
+
+.sidebar .rc-slider-tooltip-inner {
+    background-color: var(--color-surface);
+    color: var(--color-ink);
 }
 
 .content {
@@ -108,16 +159,15 @@ body {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 16px;
-    margin-bottom: 20px;
+    margin-bottom: 24px;
 }
 
 .card {
     box-sizing: border-box;
     background: var(--color-surface);
-    padding: 16px 18px;
-    border-radius: 8px;
-    box-shadow: 0 1px 0 var(--color-border);
-    border-left: 4px solid var(--color-accent);
+    padding: 18px 20px;
+    border-radius: 16px;
+    box-shadow: 0 1px 2px rgba(20, 23, 28, 0.04), 0 1px 0 var(--color-border);
 }
 
 .card h4 {
@@ -128,32 +178,31 @@ body {
 }
 
 .card h2 {
-    margin: 8px 0 0 0;
-    font-size: 24px;
+    margin: 10px 0 0 0;
+    font-size: 26px;
     font-family: var(--font-mono);
     font-weight: 500;
+    color: var(--color-accent-deep);
 }
 
-/* IMPORTANT: js-plotly-plot is Plotly's own live-managed element, not a
-   wrapper class we own. Only cosmetic properties that Plotly never sets
-   inline (background, border-radius, margin, box-shadow) belong here --
-   never width, height, or border, which can conflict with its own
-   resize logic and cause layout loops. */
+/* js-plotly-plot is Plotly's own live-managed root element, not a
+   wrapper we created. Only cosmetic properties Plotly never sets
+   inline belong here -- never width, height, or border. */
 
 .js-plotly-plot {
     background: var(--color-surface);
-    border-radius: 12px;
-    margin-bottom: 20px;
-    box-shadow: 0 1px 0 var(--color-border);
+    border-radius: 20px;
+    margin-bottom: 24px;
+    box-shadow: 0 1px 2px rgba(20, 23, 28, 0.04), 0 1px 0 var(--color-border);
 }
 
 .listing-detail-section {
     box-sizing: border-box;
     background: var(--color-surface);
-    padding: 20px;
-    border-radius: 12px;
-    margin-bottom: 20px;
-    box-shadow: 0 1px 0 var(--color-border);
+    padding: 24px;
+    border-radius: 20px;
+    margin-bottom: 24px;
+    box-shadow: 0 1px 2px rgba(20, 23, 28, 0.04), 0 1px 0 var(--color-border);
 }
 
 .listing-detail-section h3 {
@@ -163,21 +212,20 @@ body {
 }
 
 .listing-detail-section p {
-    line-height: 1.5;
+    line-height: 1.6;
     color: var(--color-ink-secondary);
 }
 
 .listing-detail-card {
     box-sizing: border-box;
-    border: 1px solid var(--color-border);
-    border-radius: 10px;
-    padding: 18px;
+    border-radius: 16px;
+    padding: 20px;
     background-color: var(--color-bg);
 }
 
 .listing-detail-card h4 {
     margin-top: 0;
-    font-size: 20px;
+    font-size: 22px;
     font-family: var(--font-display);
     font-weight: 700;
 }
@@ -185,16 +233,15 @@ body {
 .detail-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 16px;
+    gap: 14px;
     margin-bottom: 16px;
 }
 
 .detail-grid div {
     box-sizing: border-box;
     background: var(--color-surface);
-    border-radius: 8px;
-    padding: 12px;
-    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    padding: 14px;
 }
 
 .detail-grid strong {
@@ -215,22 +262,23 @@ body {
 .listing-description {
     box-sizing: border-box;
     background: var(--color-surface);
-    border: 1px solid var(--color-border);
-    border-radius: 8px;
-    padding: 12px;
+    border-radius: 12px;
+    padding: 14px;
     color: var(--color-ink-secondary);
     font-family: var(--font-body);
+    line-height: 1.6;
 }
 
 .listing-link {
     display: inline-block;
-    margin-top: 12px;
-    padding: 10px 16px;
+    margin-top: 14px;
+    padding: 11px 18px;
     background-color: var(--color-accent);
     color: var(--color-ink);
-    border-radius: 6px;
+    border-radius: 10px;
     text-decoration: none;
     font-weight: 600;
+    transition: background-color 0.15s ease;
 }
 
 .listing-link:hover {
@@ -245,10 +293,10 @@ body {
 .table-section {
     box-sizing: border-box;
     background: var(--color-surface);
-    padding: 20px;
-    border-radius: 12px;
-    margin-bottom: 20px;
-    box-shadow: 0 1px 0 var(--color-border);
+    padding: 24px;
+    border-radius: 20px;
+    margin-bottom: 24px;
+    box-shadow: 0 1px 2px rgba(20, 23, 28, 0.04), 0 1px 0 var(--color-border);
 }
 
 .table-section h3 {
@@ -258,7 +306,7 @@ body {
 }
 
 .table-section p {
-    line-height: 1.5;
+    line-height: 1.6;
     color: var(--color-ink-secondary);
 }
 
