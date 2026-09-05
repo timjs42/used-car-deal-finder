@@ -60,7 +60,6 @@ body {
 }
 
 .header p {
-    max-width: 900px;
     line-height: 1.6;
     color: var(--color-ink-secondary);
     font-size: 15px;
