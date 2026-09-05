@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+.env
+.DS_Store
+*.egg-info/
+.pytest_cache/
+data/used_cars_raw.zip
+data/used_cars_cleaned.csv
