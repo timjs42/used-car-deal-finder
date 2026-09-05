@@ -1,3 +1,5 @@
+"""Data loading and preparation for the Used Car Deal Finder app."""
+
 import pandas as pd
 from pathlib import Path
 
@@ -62,7 +64,9 @@ def load_data(path: Path = DATA_PATH) -> pd.DataFrame:
     ]
     for col in text_columns:
         if col in df.columns:
-            df[col] = df[col].astype(str).str.lower().str.strip()
+            df[col] = df[col].apply(
+                lambda value: str(value).lower().strip() if pd.notna(value) else value
+            )
 
     # limit size for performance
     df = df.sample(n=min(50000, len(df)), random_state=42)
