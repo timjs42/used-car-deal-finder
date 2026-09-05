@@ -1,0 +1,292 @@
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@500;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap');
+
+:root {
+    --color-bg: #f3eee2;
+    --color-surface: #ffffff;
+    --color-ink: #1b1f24;
+    --color-ink-secondary: #6b6455;
+    --color-border: #e5e0d3;
+
+    --color-accent: #e3a008;
+    --color-accent-deep: #b97d0a;
+
+    --font-display: 'Archivo', 'Arial Narrow', sans-serif;
+    --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-mono: 'JetBrains Mono', 'Consolas', monospace;
+}
+
+body {
+    margin: 0;
+    font-family: var(--font-body);
+    background-color: var(--color-bg);
+    color: var(--color-ink);
+}
+
+.app-container {
+    padding: 24px;
+}
+
+/* Our own components below use box-sizing: border-box individually,
+   scoped per-rule, rather than a global * reset -- a global reset would
+   also apply to elements rendered by Plotly/react-select/rc-slider,
+   which manage their own sizing internally and can conflict with it. */
+
+.header {
+    box-sizing: border-box;
+    background: var(--color-surface);
+    padding: 24px;
+    border-radius: 12px;
+    margin-bottom: 24px;
+    box-shadow: 0 1px 0 var(--color-border);
+    border-top: 3px solid var(--color-accent);
+}
+
+.header h1 {
+    margin-top: 0;
+    margin-bottom: 8px;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 28px;
+    letter-spacing: -0.01em;
+}
+
+.header p {
+    max-width: 950px;
+    line-height: 1.5;
+    color: var(--color-ink-secondary);
+}
+
+.main-layout {
+    display: flex;
+    gap: 24px;
+    align-items: flex-start;
+}
+
+/* Sidebar stays light -- this avoids needing to restyle react-select's
+   or rc-slider's internal elements at all, since their defaults already
+   assume a light background. Only the outer accent is custom. */
+
+.sidebar {
+    box-sizing: border-box;
+    width: 320px;
+    background: var(--color-surface);
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 1px 0 var(--color-border);
+    border-left: 4px solid var(--color-accent);
+    position: sticky;
+    top: 20px;
+}
+
+.sidebar h3 {
+    margin-top: 0;
+    font-family: var(--font-display);
+    font-weight: 700;
+}
+
+.sidebar label {
+    display: block;
+    margin-top: 18px;
+    margin-bottom: 6px;
+    font-weight: 500;
+    font-size: 13px;
+    color: var(--color-ink-secondary);
+}
+
+.sidebar input[type="checkbox"],
+.sidebar input[type="radio"] {
+    accent-color: var(--color-accent);
+    margin-right: 6px;
+}
+
+.content {
+    flex: 1;
+    min-width: 0;
+}
+
+.cards {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.card {
+    box-sizing: border-box;
+    background: var(--color-surface);
+    padding: 16px 18px;
+    border-radius: 8px;
+    box-shadow: 0 1px 0 var(--color-border);
+    border-left: 4px solid var(--color-accent);
+}
+
+.card h4 {
+    margin: 0;
+    color: var(--color-ink-secondary);
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.card h2 {
+    margin: 8px 0 0 0;
+    font-size: 24px;
+    font-family: var(--font-mono);
+    font-weight: 500;
+}
+
+/* IMPORTANT: js-plotly-plot is Plotly's own live-managed element, not a
+   wrapper class we own. Only cosmetic properties that Plotly never sets
+   inline (background, border-radius, margin, box-shadow) belong here --
+   never width, height, or border, which can conflict with its own
+   resize logic and cause layout loops. */
+
+.js-plotly-plot {
+    background: var(--color-surface);
+    border-radius: 12px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 0 var(--color-border);
+}
+
+.listing-detail-section {
+    box-sizing: border-box;
+    background: var(--color-surface);
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 0 var(--color-border);
+}
+
+.listing-detail-section h3 {
+    margin-top: 0;
+    font-family: var(--font-display);
+    font-weight: 700;
+}
+
+.listing-detail-section p {
+    line-height: 1.5;
+    color: var(--color-ink-secondary);
+}
+
+.listing-detail-card {
+    box-sizing: border-box;
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+    padding: 18px;
+    background-color: var(--color-bg);
+}
+
+.listing-detail-card h4 {
+    margin-top: 0;
+    font-size: 20px;
+    font-family: var(--font-display);
+    font-weight: 700;
+}
+
+.detail-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.detail-grid div {
+    box-sizing: border-box;
+    background: var(--color-surface);
+    border-radius: 8px;
+    padding: 12px;
+    border: 1px solid var(--color-border);
+}
+
+.detail-grid strong {
+    display: block;
+    color: var(--color-ink-secondary);
+    font-size: 12px;
+    font-weight: 500;
+    margin-bottom: 6px;
+}
+
+.detail-grid p {
+    margin: 0;
+    color: var(--color-ink);
+    font-size: 15px;
+    font-family: var(--font-mono);
+}
+
+.listing-description {
+    box-sizing: border-box;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    padding: 12px;
+    color: var(--color-ink-secondary);
+    font-family: var(--font-body);
+}
+
+.listing-link {
+    display: inline-block;
+    margin-top: 12px;
+    padding: 10px 16px;
+    background-color: var(--color-accent);
+    color: var(--color-ink);
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.listing-link:hover {
+    background-color: var(--color-accent-deep);
+}
+
+.empty-listing-message {
+    color: var(--color-ink-secondary);
+    font-style: italic;
+}
+
+.table-section {
+    box-sizing: border-box;
+    background: var(--color-surface);
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 0 var(--color-border);
+}
+
+.table-section h3 {
+    margin-top: 0;
+    font-family: var(--font-display);
+    font-weight: 700;
+}
+
+.table-section p {
+    line-height: 1.5;
+    color: var(--color-ink-secondary);
+}
+
+@media screen and (max-width: 1000px) {
+    .main-layout {
+        flex-direction: column;
+    }
+
+    .sidebar {
+        width: 100%;
+        position: static;
+    }
+
+    .cards {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .detail-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media screen and (max-width: 600px) {
+    .cards {
+        grid-template-columns: 1fr;
+    }
+
+    .detail-grid {
+        grid-template-columns: 1fr;
+    }
+}
