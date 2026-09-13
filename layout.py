@@ -1,5 +1,5 @@
 import pandas as pd
-from dash import dcc, html, dash_table
+from dash import dash_table, dcc, html
 
 
 def build_layout(df: pd.DataFrame) -> html.Div:
@@ -12,9 +12,7 @@ def build_layout(df: pd.DataFrame) -> html.Div:
         sorted(df["condition"].dropna().unique()) if "condition" in df.columns else []
     )
 
-    fuel_options = (
-        sorted(df["fuel"].dropna().unique()) if "fuel" in df.columns else []
-    )
+    fuel_options = sorted(df["fuel"].dropna().unique()) if "fuel" in df.columns else []
 
     year_min = int(df["year"].min())
     year_max = int(df["year"].max())
@@ -52,8 +50,7 @@ def build_layout(df: pd.DataFrame) -> html.Div:
                             dcc.Dropdown(
                                 id="manufacturer-filter",
                                 options=[
-                                    {"label": m.title(), "value": m}
-                                    for m in manufacturer_options
+                                    {"label": m.title(), "value": m} for m in manufacturer_options
                                 ],
                                 value=None,
                                 placeholder="Select a manufacturer",
@@ -76,9 +73,7 @@ def build_layout(df: pd.DataFrame) -> html.Div:
                             html.Label("State"),
                             dcc.Dropdown(
                                 id="state-filter",
-                                options=[
-                                    {"label": s.upper(), "value": s} for s in state_options
-                                ],
+                                options=[{"label": s.upper(), "value": s} for s in state_options],
                                 value=None,
                                 placeholder="Select a state",
                                 clearable=True,
@@ -87,8 +82,7 @@ def build_layout(df: pd.DataFrame) -> html.Div:
                             dcc.Checklist(
                                 id="condition-filter",
                                 options=[
-                                    {"label": c.title(), "value": c}
-                                    for c in condition_options
+                                    {"label": c.title(), "value": c} for c in condition_options
                                 ],
                                 value=[],
                                 inline=False,
@@ -96,9 +90,7 @@ def build_layout(df: pd.DataFrame) -> html.Div:
                             html.Label("Fuel Type"),
                             dcc.Dropdown(
                                 id="fuel-filter",
-                                options=[
-                                    {"label": f.title(), "value": f} for f in fuel_options
-                                ],
+                                options=[{"label": f.title(), "value": f} for f in fuel_options],
                                 value=None,
                                 placeholder="Select fuel type",
                                 clearable=True,

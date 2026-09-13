@@ -1,5 +1,6 @@
-import pandas as pd
 from pathlib import Path
+
+import pandas as pd
 
 # file paths
 
@@ -30,6 +31,7 @@ COLUMNS_TO_KEEP = [
 ]
 
 # function
+
 
 def clean_used_car_data():
     print("Loading raw dataset...")
@@ -101,7 +103,7 @@ def clean_used_car_data():
         + df["model"].str.title()
     )
 
-    # estimate market median price 
+    # estimate market median price
     group_cols = ["manufacturer", "model", "year"]
 
     df["market_median_price"] = df.groupby(group_cols)["price"].transform("median")

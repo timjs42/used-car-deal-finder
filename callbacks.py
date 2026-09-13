@@ -278,9 +278,7 @@ def register_callbacks(app, df: pd.DataFrame) -> None:
                 description[:500] + "..." if len(description) > 500 else description
             )
             detail_items.append(html.H5("Listing Description"))
-            detail_items.append(
-                html.P(description_preview, className="listing-description")
-            )
+            detail_items.append(html.P(description_preview, className="listing-description"))
 
         if "url" in row and pd.notna(row["url"]):
             detail_items.append(
