@@ -1,10 +1,10 @@
 # Used Car Deal Finder
 
-**[Live demo](https://used-car-deal-finder.onrender.com/)** — hosted on Render's free tier. If it's been quiet for a while, the first load can take 30-60 seconds to spin back up.
+**[Live demo](https://used-car-deal-finder.onrender.com/)** - hosted on Render's free tier. If hasn't been loaded in a while, the first load can take 30-60 seconds to spin back up.
 
 [![CI](https://github.com/timjs42/used-car-deal-finder/actions/workflows/ci.yml/badge.svg)](https://github.com/timjs42/used-car-deal-finder/actions/workflows/ci.yml)
 
-An interactive Dash dashboard for exploring used car listings and surfacing potential deals — vehicles priced below what comparable listings (same manufacturer, model, and year) are going for.
+An interactive Dash dashboard for exploring used car listings and surfacing potential deals - vehicles priced below what comparable listings (same manufacturer, model, and year) are going for.
 
 ## Features
 
