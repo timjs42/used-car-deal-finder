@@ -23,6 +23,8 @@ def build_layout(df: pd.DataFrame) -> html.Div:
     return html.Div(
         className="app-container",
         children=[
+            dcc.Location(id="url", refresh=False),
+            dcc.Store(id="url-synced", data=False),
             dcc.Store(id="theme-store", storage_type="local", data="light"),
             html.Div(
                 className="header",
@@ -64,7 +66,22 @@ def build_layout(df: pd.DataFrame) -> html.Div:
                                 id="filters-panel",
                                 className="filters-panel",
                                 children=[
-                                    html.H3("Filters"),
+                                    html.Div(
+                                        className="filters-header",
+                                        children=[
+                                            html.H3("Filters"),
+                                            html.Button(
+                                                "Copy Link",
+                                                id="copy-link-button",
+                                                className="copy-link-button",
+                                                n_clicks=0,
+                                            ),
+                                        ],
+                                    ),
+                                    html.Span(
+                                        id="copy-link-feedback",
+                                        className="copy-link-feedback",
+                                    ),
                                     html.Label("Manufacturer", htmlFor="manufacturer-filter"),
                                     dcc.Dropdown(
                                         id="manufacturer-filter",

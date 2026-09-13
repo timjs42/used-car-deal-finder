@@ -135,7 +135,42 @@ body {
     font-size: 18px;
 }
 
-.sidebar > label {
+.filters-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.filters-header h3 {
+    margin-bottom: 0;
+}
+
+.copy-link-button {
+    flex-shrink: 0;
+    padding: 6px 12px;
+    background-color: var(--color-surface);
+    color: var(--color-panel-text);
+    border: 1px solid var(--color-panel-border);
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.copy-link-button:hover {
+    border-color: var(--color-ink);
+}
+
+.copy-link-feedback {
+    display: block;
+    min-height: 16px;
+    margin-top: 4px;
+    font-size: 12px;
+    color: var(--color-panel-text-muted);
+}
+
+.filters-panel > label {
     display: block;
     margin-top: 20px;
     margin-bottom: 6px;

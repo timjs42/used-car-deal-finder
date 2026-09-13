@@ -1,8 +1,11 @@
 """Callback registration for the Used Car Deal Finder app."""
 
+from urllib.parse import parse_qs, urlencode, urlsplit
+
 import pandas as pd
 import plotly.express as px
 from dash import Input, Output, State, dcc, html
+from dash.exceptions import PreventUpdate
 
 TABLE_ROW_COLORS = {
     "light": {
@@ -65,8 +68,185 @@ def filter_listings(
     ]
 
 
+def parse_filters_from_query(query_string, year_min, year_max, mileage_min, mileage_max):
+    """Parse a URL query string into the filter values it represents.
+
+    Out-of-range year/mileage bounds are clipped to the dataset's actual range so a
+    stale or hand-edited link can't push the range sliders outside their min/max.
+    """
+    params = parse_qs(query_string or "")
+
+    def first(key):
+        values = params.get(key)
+        return values[0] if values else None
+
+    def parse_int(key, default):
+        value = first(key)
+        try:
+            return int(value) if value is not None else default
+        except ValueError:
+            return default
+
+    conditions = first("condition")
+
+    return (
+        first("manufacturer"),
+        first("model"),
+        first("state"),
+        conditions.split(",") if conditions else [],
+        first("fuel"),
+        first("transmission") or "all",
+        [
+            max(year_min, min(year_max, parse_int("year_min", year_min))),
+            max(year_min, min(year_max, parse_int("year_max", year_max))),
+        ],
+        [
+            max(mileage_min, min(mileage_max, parse_int("mileage_min", mileage_min))),
+            max(mileage_min, min(mileage_max, parse_int("mileage_max", mileage_max))),
+        ],
+    )
+
+
+def build_query_from_filters(
+    selected_manufacturer,
+    model_search,
+    selected_state,
+    selected_conditions,
+    selected_fuel,
+    selected_transmission,
+    selected_years,
+    selected_mileage,
+    year_min,
+    year_max,
+    mileage_min,
+    mileage_max,
+):
+    """Build a shareable "?key=value" query string from the current filter values.
+
+    Only filters that differ from their "no filter applied" default are included,
+    so a view with few filters set gets a short, readable URL.
+    """
+    params = {}
+
+    if selected_manufacturer:
+        params["manufacturer"] = selected_manufacturer
+    if model_search:
+        params["model"] = model_search
+    if selected_state:
+        params["state"] = selected_state
+    if selected_conditions:
+        params["condition"] = ",".join(selected_conditions)
+    if selected_fuel:
+        params["fuel"] = selected_fuel
+    if selected_transmission and selected_transmission != "all":
+        params["transmission"] = selected_transmission
+    if selected_years and tuple(selected_years) != (year_min, year_max):
+        params["year_min"], params["year_max"] = selected_years
+    if selected_mileage and tuple(selected_mileage) != (mileage_min, mileage_max):
+        params["mileage_min"], params["mileage_max"] = selected_mileage
+
+    query = urlencode(params)
+    return f"?{query}" if query else ""
+
+
 def register_callbacks(app, df: pd.DataFrame) -> None:
     """Attach all interactive callbacks to the given Dash app instance."""
+
+    year_min = int(df["year"].min())
+    year_max = int(df["year"].max())
+    mileage_min = int(df["odometer"].min())
+    mileage_max = int(df["odometer"].max())
+
+    app.clientside_callback(
+        """
+        function(n_clicks) {
+            if (!n_clicks) {
+                return "";
+            }
+            navigator.clipboard.writeText(window.location.href);
+            return "Link copied!";
+        }
+        """,
+        Output("copy-link-feedback", "children"),
+        Input("copy-link-button", "n_clicks"),
+    )
+
+    @app.callback(
+        Output("manufacturer-filter", "value"),
+        Output("model-search", "value"),
+        Output("state-filter", "value"),
+        Output("condition-filter", "value"),
+        Output("fuel-filter", "value"),
+        Output("transmission-filter", "value"),
+        Output("year-filter", "value"),
+        Output("mileage-filter", "value"),
+        Output("url-synced", "data"),
+        Input("url", "href"),
+        State("url-synced", "data"),
+    )
+    def sync_filters_from_url(href, already_synced):
+        if already_synced:
+            raise PreventUpdate
+
+        query = urlsplit(href).query if href else ""
+        (
+            manufacturer,
+            model_search,
+            state,
+            conditions,
+            fuel,
+            transmission,
+            year_range,
+            mileage_range,
+        ) = parse_filters_from_query(query, year_min, year_max, mileage_min, mileage_max)
+
+        return (
+            manufacturer,
+            model_search,
+            state,
+            conditions,
+            fuel,
+            transmission,
+            year_range,
+            mileage_range,
+            True,
+        )
+
+    @app.callback(
+        Output("url", "search"),
+        Input("manufacturer-filter", "value"),
+        Input("model-search", "value"),
+        Input("state-filter", "value"),
+        Input("condition-filter", "value"),
+        Input("fuel-filter", "value"),
+        Input("transmission-filter", "value"),
+        Input("year-filter", "value"),
+        Input("mileage-filter", "value"),
+    )
+    def sync_url_from_filters(
+        selected_manufacturer,
+        model_search,
+        selected_state,
+        selected_conditions,
+        selected_fuel,
+        selected_transmission,
+        selected_years,
+        selected_mileage,
+    ):
+        return build_query_from_filters(
+            selected_manufacturer,
+            model_search,
+            selected_state,
+            selected_conditions,
+            selected_fuel,
+            selected_transmission,
+            selected_years,
+            selected_mileage,
+            year_min,
+            year_max,
+            mileage_min,
+            mileage_max,
+        )
 
     app.clientside_callback(
         """
