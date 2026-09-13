@@ -4,9 +4,48 @@ import pandas as pd
 import plotly.express as px
 from dash import Input, Output, State, html
 
+TABLE_ROW_COLORS = {
+    "light": {
+        "positive_bg": "#dcfce7",
+        "positive_text": "#166534",
+        "negative_bg": "#fee2e2",
+        "negative_text": "#991b1b",
+    },
+    "dark": {
+        "positive_bg": "#103b2c",
+        "positive_text": "#34d399",
+        "negative_bg": "#3b1414",
+        "negative_text": "#f87171",
+    },
+}
+
+TABLE_BASE_STYLE = {
+    "light": {"header_bg": "#f3f4f6", "header_text": "#14171c", "row_text": "#14171c"},
+    "dark": {"header_bg": "#2b303a", "header_text": "#f1f0ec", "row_text": "#f1f0ec"},
+}
+
 
 def register_callbacks(app, df: pd.DataFrame) -> None:
     """Attach all interactive callbacks to the given Dash app instance."""
+
+    app.clientside_callback(
+        """
+        function(n_clicks, currentTheme) {
+            const theme = !n_clicks
+                ? (currentTheme || "light")
+                : (currentTheme === "dark" ? "light" : "dark");
+            document.documentElement.setAttribute("data-theme", theme);
+            const label = theme === "dark"
+                ? "\\u2600\\ufe0f Light Mode"
+                : "\\ud83c\\udf19 Dark Mode";
+            return [theme, label];
+        }
+        """,
+        Output("theme-store", "data"),
+        Output("theme-toggle", "children"),
+        Input("theme-toggle", "n_clicks"),
+        State("theme-store", "data"),
+    )
 
     @app.callback(
         Output("sidebar-open", "data"),
@@ -32,6 +71,9 @@ def register_callbacks(app, df: pd.DataFrame) -> None:
         Output("top-deals-bar", "figure"),
         Output("price-boxplot", "figure"),
         Output("listing-table", "data"),
+        Output("listing-table", "style_header"),
+        Output("listing-table", "style_cell"),
+        Output("listing-table", "style_data_conditional"),
         Input("manufacturer-filter", "value"),
         Input("model-search", "value"),
         Input("state-filter", "value"),
@@ -40,6 +82,7 @@ def register_callbacks(app, df: pd.DataFrame) -> None:
         Input("transmission-filter", "value"),
         Input("year-filter", "value"),
         Input("mileage-filter", "value"),
+        Input("theme-store", "data"),
     )
     def update_dashboard(
         selected_manufacturer,
@@ -50,7 +93,40 @@ def register_callbacks(app, df: pd.DataFrame) -> None:
         selected_transmission,
         selected_years,
         selected_mileage,
+        theme,
     ):
+        theme = theme if theme in TABLE_BASE_STYLE else "light"
+        chart_template = "plotly_dark" if theme == "dark" else "plotly_white"
+        row_colors = TABLE_ROW_COLORS[theme]
+        base_style = TABLE_BASE_STYLE[theme]
+
+        style_header = {
+            "fontWeight": "bold",
+            "backgroundColor": base_style["header_bg"],
+            "color": base_style["header_text"],
+        }
+        style_cell = {
+            "textAlign": "left",
+            "padding": "8px",
+            "fontFamily": "Arial",
+            "fontSize": "14px",
+            "backgroundColor": "transparent",
+            "color": base_style["row_text"],
+        }
+        style_data_conditional = [
+            {
+                "if": {"filter_query": "{deal_score} > 2000", "column_id": "deal_score"},
+                "backgroundColor": row_colors["positive_bg"],
+                "color": row_colors["positive_text"],
+                "fontWeight": "bold",
+            },
+            {
+                "if": {"filter_query": "{deal_score} < 0", "column_id": "deal_score"},
+                "backgroundColor": row_colors["negative_bg"],
+                "color": row_colors["negative_text"],
+            },
+        ]
+
         filtered_df = df
 
         if selected_manufacturer:
@@ -82,7 +158,7 @@ def register_callbacks(app, df: pd.DataFrame) -> None:
 
         if filtered_df.empty:
             empty_fig = px.scatter(title="No listings match the selected filters.")
-            empty_fig.update_layout(template="plotly_white")
+            empty_fig.update_layout(template=chart_template)
 
             return (
                 "0",
@@ -93,6 +169,9 @@ def register_callbacks(app, df: pd.DataFrame) -> None:
                 empty_fig,
                 empty_fig,
                 [],
+                style_header,
+                style_cell,
+                style_data_conditional,
             )
 
         listing_count = f"{len(filtered_df):,}"
@@ -127,7 +206,7 @@ def register_callbacks(app, df: pd.DataFrame) -> None:
         scatter_fig.update_layout(
             xaxis_tickformat=",",
             yaxis_tickprefix="$",
-            template="plotly_white",
+            template=chart_template,
             margin=dict(l=40, r=40, t=70, b=40),
         )
 
@@ -151,7 +230,7 @@ def register_callbacks(app, df: pd.DataFrame) -> None:
         bar_fig.update_layout(
             yaxis={"categoryorder": "total ascending"},
             xaxis_tickprefix="$",
-            template="plotly_white",
+            template=chart_template,
             showlegend=False,
             margin=dict(l=40, r=40, t=70, b=40),
         )
@@ -177,7 +256,7 @@ def register_callbacks(app, df: pd.DataFrame) -> None:
 
         box_fig.update_layout(
             yaxis_tickprefix="$",
-            template="plotly_white",
+            template=chart_template,
             showlegend=False,
             margin=dict(l=40, r=40, t=70, b=40),
         )
@@ -209,6 +288,9 @@ def register_callbacks(app, df: pd.DataFrame) -> None:
             bar_fig,
             box_fig,
             table_data,
+            style_header,
+            style_cell,
+            style_data_conditional,
         )
 
     @app.callback(

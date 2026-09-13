@@ -23,9 +23,16 @@ def build_layout(df: pd.DataFrame) -> html.Div:
     return html.Div(
         className="app-container",
         children=[
+            dcc.Store(id="theme-store", storage_type="local", data="light"),
             html.Div(
                 className="header",
                 children=[
+                    html.Button(
+                        "\U0001f319 Dark Mode",
+                        id="theme-toggle",
+                        className="theme-toggle",
+                        n_clicks=0,
+                    ),
                     html.H1("Used Car Deal Finder"),
                     html.P(
                         "This dashboard helps users explore used car listings and identify "
