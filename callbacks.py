@@ -2,11 +2,26 @@
 
 import pandas as pd
 import plotly.express as px
-from dash import Input, Output, html
+from dash import Input, Output, State, html
 
 
 def register_callbacks(app, df: pd.DataFrame) -> None:
     """Attach all interactive callbacks to the given Dash app instance."""
+
+    @app.callback(
+        Output("sidebar-open", "data"),
+        Output("filters-panel", "className"),
+        Output("sidebar-toggle", "children"),
+        Output("sidebar-toggle", "aria-expanded"),
+        Input("sidebar-toggle", "n_clicks"),
+        State("sidebar-open", "data"),
+        prevent_initial_call=True,
+    )
+    def toggle_sidebar(_n_clicks, is_open):
+        is_open = not is_open
+        class_name = "filters-panel" if is_open else "filters-panel collapsed"
+        label = "Hide Filters" if is_open else "Show Filters"
+        return is_open, class_name, label, "true" if is_open else "false"
 
     @app.callback(
         Output("listing-count", "children"),
