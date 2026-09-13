@@ -1,7 +1,8 @@
 """Data loading and preparation for the Used Car Deal Finder app."""
 
-import pandas as pd
 from pathlib import Path
+
+import pandas as pd
 
 DATA_PATH = Path("data") / "used_cars_sample.csv"
 
@@ -26,9 +27,9 @@ def load_data(path: Path = DATA_PATH) -> pd.DataFrame:
         )
 
     if "market_median_price" not in df.columns:
-        df["market_median_price"] = df.groupby(
-            ["manufacturer", "model", "year"]
-        )["price"].transform("median")
+        df["market_median_price"] = df.groupby(["manufacturer", "model", "year"])[
+            "price"
+        ].transform("median")
 
     if "deal_score" not in df.columns:
         df["deal_score"] = df["market_median_price"] - df["price"]
@@ -64,9 +65,7 @@ def load_data(path: Path = DATA_PATH) -> pd.DataFrame:
     ]
     for col in text_columns:
         if col in df.columns:
-            df[col] = df[col].apply(
-                lambda value: str(value).lower().strip() if pd.notna(value) else value
-            )
+            df[col] = df[col].str.lower().str.strip()
 
     # limit size for performance
     df = df.sample(n=min(50000, len(df)), random_state=42)

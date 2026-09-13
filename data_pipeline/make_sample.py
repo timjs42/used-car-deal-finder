@@ -1,5 +1,6 @@
-import pandas as pd
 from pathlib import Path
+
+import pandas as pd
 
 INPUT_FILE = Path("data") / "used_cars_cleaned.csv"
 OUTPUT_FILE = Path("data") / "used_cars_sample.csv"
@@ -14,9 +15,8 @@ def build_sample():
     print(f"Full cleaned dataset: {len(df):,} rows")
 
     sample_fraction = TARGET_SAMPLE_SIZE / len(df)
-    df_sample = (
-        df.groupby("manufacturer", group_keys=False)
-        .apply(lambda group: group.sample(frac=sample_fraction, random_state=RANDOM_STATE))
+    df_sample = df.groupby("manufacturer", group_keys=False).apply(
+        lambda group: group.sample(frac=sample_fraction, random_state=RANDOM_STATE)
     )
 
     if "description" in df_sample.columns:

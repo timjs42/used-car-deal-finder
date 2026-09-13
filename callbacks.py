@@ -1,12 +1,286 @@
 """Callback registration for the Used Car Deal Finder app."""
 
+from urllib.parse import parse_qs, urlencode, urlsplit
+
 import pandas as pd
 import plotly.express as px
-from dash import Input, Output, html
+from dash import Input, Output, State, dcc, html
+from dash.exceptions import PreventUpdate
+
+TABLE_ROW_COLORS = {
+    "light": {
+        "positive_bg": "#dcfce7",
+        "positive_text": "#166534",
+        "negative_bg": "#fee2e2",
+        "negative_text": "#991b1b",
+    },
+    "dark": {
+        "positive_bg": "#103b2c",
+        "positive_text": "#34d399",
+        "negative_bg": "#3b1414",
+        "negative_text": "#f87171",
+    },
+}
+
+TABLE_BASE_STYLE = {
+    "light": {"header_bg": "#f3f4f6", "header_text": "#14171c", "row_text": "#14171c"},
+    "dark": {"header_bg": "#2b303a", "header_text": "#f1f0ec", "row_text": "#f1f0ec"},
+}
+
+
+def filter_listings(
+    df,
+    selected_manufacturer,
+    model_search,
+    selected_state,
+    selected_conditions,
+    selected_fuel,
+    selected_transmission,
+    selected_years,
+    selected_mileage,
+):
+    """Apply the sidebar filters to df and return the matching rows."""
+    filtered_df = df
+
+    if selected_manufacturer:
+        filtered_df = filtered_df[filtered_df["manufacturer"] == selected_manufacturer]
+
+    if model_search:
+        filtered_df = filtered_df[filtered_df["model"].str.contains(model_search.lower(), na=False)]
+
+    if selected_state:
+        filtered_df = filtered_df[filtered_df["state"] == selected_state]
+
+    if selected_conditions:
+        filtered_df = filtered_df[filtered_df["condition"].isin(selected_conditions)]
+
+    if selected_fuel:
+        filtered_df = filtered_df[filtered_df["fuel"] == selected_fuel]
+
+    if selected_transmission != "all":
+        filtered_df = filtered_df[filtered_df["transmission"] == selected_transmission]
+
+    return filtered_df[
+        (filtered_df["year"] >= selected_years[0])
+        & (filtered_df["year"] <= selected_years[1])
+        & (filtered_df["odometer"] >= selected_mileage[0])
+        & (filtered_df["odometer"] <= selected_mileage[1])
+    ]
+
+
+def parse_filters_from_query(query_string, year_min, year_max, mileage_min, mileage_max):
+    """Parse a URL query string into the filter values it represents.
+
+    Out-of-range year/mileage bounds are clipped to the dataset's actual range so a
+    stale or hand-edited link can't push the range sliders outside their min/max.
+    """
+    params = parse_qs(query_string or "")
+
+    def first(key):
+        values = params.get(key)
+        return values[0] if values else None
+
+    def parse_int(key, default):
+        value = first(key)
+        try:
+            return int(value) if value is not None else default
+        except ValueError:
+            return default
+
+    conditions = first("condition")
+
+    return (
+        first("manufacturer"),
+        first("model"),
+        first("state"),
+        conditions.split(",") if conditions else [],
+        first("fuel"),
+        first("transmission") or "all",
+        [
+            max(year_min, min(year_max, parse_int("year_min", year_min))),
+            max(year_min, min(year_max, parse_int("year_max", year_max))),
+        ],
+        [
+            max(mileage_min, min(mileage_max, parse_int("mileage_min", mileage_min))),
+            max(mileage_min, min(mileage_max, parse_int("mileage_max", mileage_max))),
+        ],
+    )
+
+
+def build_query_from_filters(
+    selected_manufacturer,
+    model_search,
+    selected_state,
+    selected_conditions,
+    selected_fuel,
+    selected_transmission,
+    selected_years,
+    selected_mileage,
+    year_min,
+    year_max,
+    mileage_min,
+    mileage_max,
+):
+    """Build a shareable "?key=value" query string from the current filter values.
+
+    Only filters that differ from their "no filter applied" default are included,
+    so a view with few filters set gets a short, readable URL.
+    """
+    params = {}
+
+    if selected_manufacturer:
+        params["manufacturer"] = selected_manufacturer
+    if model_search:
+        params["model"] = model_search
+    if selected_state:
+        params["state"] = selected_state
+    if selected_conditions:
+        params["condition"] = ",".join(selected_conditions)
+    if selected_fuel:
+        params["fuel"] = selected_fuel
+    if selected_transmission and selected_transmission != "all":
+        params["transmission"] = selected_transmission
+    if selected_years and tuple(selected_years) != (year_min, year_max):
+        params["year_min"], params["year_max"] = selected_years
+    if selected_mileage and tuple(selected_mileage) != (mileage_min, mileage_max):
+        params["mileage_min"], params["mileage_max"] = selected_mileage
+
+    query = urlencode(params)
+    return f"?{query}" if query else ""
 
 
 def register_callbacks(app, df: pd.DataFrame) -> None:
     """Attach all interactive callbacks to the given Dash app instance."""
+
+    year_min = int(df["year"].min())
+    year_max = int(df["year"].max())
+    mileage_min = int(df["odometer"].min())
+    mileage_max = int(df["odometer"].max())
+
+    app.clientside_callback(
+        """
+        function(n_clicks) {
+            if (!n_clicks) {
+                return "";
+            }
+            navigator.clipboard.writeText(window.location.href);
+            return "Link copied!";
+        }
+        """,
+        Output("copy-link-feedback", "children"),
+        Input("copy-link-button", "n_clicks"),
+    )
+
+    @app.callback(
+        Output("manufacturer-filter", "value"),
+        Output("model-search", "value"),
+        Output("state-filter", "value"),
+        Output("condition-filter", "value"),
+        Output("fuel-filter", "value"),
+        Output("transmission-filter", "value"),
+        Output("year-filter", "value"),
+        Output("mileage-filter", "value"),
+        Output("url-synced", "data"),
+        Input("url", "href"),
+        State("url-synced", "data"),
+    )
+    def sync_filters_from_url(href, already_synced):
+        if already_synced:
+            raise PreventUpdate
+
+        query = urlsplit(href).query if href else ""
+        (
+            manufacturer,
+            model_search,
+            state,
+            conditions,
+            fuel,
+            transmission,
+            year_range,
+            mileage_range,
+        ) = parse_filters_from_query(query, year_min, year_max, mileage_min, mileage_max)
+
+        return (
+            manufacturer,
+            model_search,
+            state,
+            conditions,
+            fuel,
+            transmission,
+            year_range,
+            mileage_range,
+            True,
+        )
+
+    @app.callback(
+        Output("url", "search"),
+        Input("manufacturer-filter", "value"),
+        Input("model-search", "value"),
+        Input("state-filter", "value"),
+        Input("condition-filter", "value"),
+        Input("fuel-filter", "value"),
+        Input("transmission-filter", "value"),
+        Input("year-filter", "value"),
+        Input("mileage-filter", "value"),
+    )
+    def sync_url_from_filters(
+        selected_manufacturer,
+        model_search,
+        selected_state,
+        selected_conditions,
+        selected_fuel,
+        selected_transmission,
+        selected_years,
+        selected_mileage,
+    ):
+        return build_query_from_filters(
+            selected_manufacturer,
+            model_search,
+            selected_state,
+            selected_conditions,
+            selected_fuel,
+            selected_transmission,
+            selected_years,
+            selected_mileage,
+            year_min,
+            year_max,
+            mileage_min,
+            mileage_max,
+        )
+
+    app.clientside_callback(
+        """
+        function(n_clicks, currentTheme) {
+            const theme = !n_clicks
+                ? (currentTheme || "light")
+                : (currentTheme === "dark" ? "light" : "dark");
+            document.documentElement.setAttribute("data-theme", theme);
+            const label = theme === "dark"
+                ? "\\u2600\\ufe0f Light Mode"
+                : "\\ud83c\\udf19 Dark Mode";
+            return [theme, label];
+        }
+        """,
+        Output("theme-store", "data"),
+        Output("theme-toggle", "children"),
+        Input("theme-toggle", "n_clicks"),
+        State("theme-store", "data"),
+    )
+
+    @app.callback(
+        Output("sidebar-open", "data"),
+        Output("filters-panel", "className"),
+        Output("sidebar-toggle", "children"),
+        Output("sidebar-toggle", "aria-expanded"),
+        Input("sidebar-toggle", "n_clicks"),
+        State("sidebar-open", "data"),
+        prevent_initial_call=True,
+    )
+    def toggle_sidebar(_n_clicks, is_open):
+        is_open = not is_open
+        class_name = "filters-panel" if is_open else "filters-panel collapsed"
+        label = "Hide Filters" if is_open else "Show Filters"
+        return is_open, class_name, label, "true" if is_open else "false"
 
     @app.callback(
         Output("listing-count", "children"),
@@ -17,6 +291,9 @@ def register_callbacks(app, df: pd.DataFrame) -> None:
         Output("top-deals-bar", "figure"),
         Output("price-boxplot", "figure"),
         Output("listing-table", "data"),
+        Output("listing-table", "style_header"),
+        Output("listing-table", "style_cell"),
+        Output("listing-table", "style_data_conditional"),
         Input("manufacturer-filter", "value"),
         Input("model-search", "value"),
         Input("state-filter", "value"),
@@ -25,6 +302,7 @@ def register_callbacks(app, df: pd.DataFrame) -> None:
         Input("transmission-filter", "value"),
         Input("year-filter", "value"),
         Input("mileage-filter", "value"),
+        Input("theme-store", "data"),
     )
     def update_dashboard(
         selected_manufacturer,
@@ -35,39 +313,55 @@ def register_callbacks(app, df: pd.DataFrame) -> None:
         selected_transmission,
         selected_years,
         selected_mileage,
+        theme,
     ):
-        filtered_df = df.copy()
+        theme = theme if theme in TABLE_BASE_STYLE else "light"
+        chart_template = "plotly_dark" if theme == "dark" else "plotly_white"
+        row_colors = TABLE_ROW_COLORS[theme]
+        base_style = TABLE_BASE_STYLE[theme]
 
-        if selected_manufacturer:
-            filtered_df = filtered_df[filtered_df["manufacturer"] == selected_manufacturer]
-
-        if model_search:
-            filtered_df = filtered_df[
-                filtered_df["model"].str.contains(model_search.lower(), na=False)
-            ]
-
-        if selected_state:
-            filtered_df = filtered_df[filtered_df["state"] == selected_state]
-
-        if selected_conditions:
-            filtered_df = filtered_df[filtered_df["condition"].isin(selected_conditions)]
-
-        if selected_fuel:
-            filtered_df = filtered_df[filtered_df["fuel"] == selected_fuel]
-
-        if selected_transmission != "all":
-            filtered_df = filtered_df[filtered_df["transmission"] == selected_transmission]
-
-        filtered_df = filtered_df[
-            (filtered_df["year"] >= selected_years[0])
-            & (filtered_df["year"] <= selected_years[1])
-            & (filtered_df["odometer"] >= selected_mileage[0])
-            & (filtered_df["odometer"] <= selected_mileage[1])
+        style_header = {
+            "fontWeight": "bold",
+            "backgroundColor": base_style["header_bg"],
+            "color": base_style["header_text"],
+        }
+        style_cell = {
+            "textAlign": "left",
+            "padding": "8px",
+            "fontFamily": "Arial",
+            "fontSize": "14px",
+            "backgroundColor": "transparent",
+            "color": base_style["row_text"],
+        }
+        style_data_conditional = [
+            {
+                "if": {"filter_query": "{deal_score} > 2000", "column_id": "deal_score"},
+                "backgroundColor": row_colors["positive_bg"],
+                "color": row_colors["positive_text"],
+                "fontWeight": "bold",
+            },
+            {
+                "if": {"filter_query": "{deal_score} < 0", "column_id": "deal_score"},
+                "backgroundColor": row_colors["negative_bg"],
+                "color": row_colors["negative_text"],
+            },
         ]
+
+        filtered_df = filter_listings(
+            df,
+            selected_manufacturer,
+            model_search,
+            selected_state,
+            selected_conditions,
+            selected_fuel,
+            selected_transmission,
+            selected_years,
+            selected_mileage,
+        )
 
         if filtered_df.empty:
             empty_fig = px.scatter(title="No listings match the selected filters.")
-            empty_fig.update_layout(template="plotly_white")
+            empty_fig.update_layout(template=chart_template)
 
             return (
                 "0",
@@ -78,6 +372,9 @@ def register_callbacks(app, df: pd.DataFrame) -> None:
                 empty_fig,
                 empty_fig,
                 [],
+                style_header,
+                style_cell,
+                style_data_conditional,
             )
 
         listing_count = f"{len(filtered_df):,}"
@@ -112,7 +409,7 @@ def register_callbacks(app, df: pd.DataFrame) -> None:
         scatter_fig.update_layout(
             xaxis_tickformat=",",
             yaxis_tickprefix="$",
-            template="plotly_white",
+            template=chart_template,
             margin=dict(l=40, r=40, t=70, b=40),
         )
 
@@ -136,7 +433,7 @@ def register_callbacks(app, df: pd.DataFrame) -> None:
         bar_fig.update_layout(
             yaxis={"categoryorder": "total ascending"},
             xaxis_tickprefix="$",
-            template="plotly_white",
+            template=chart_template,
             showlegend=False,
             margin=dict(l=40, r=40, t=70, b=40),
         )
@@ -162,7 +459,7 @@ def register_callbacks(app, df: pd.DataFrame) -> None:
 
         box_fig.update_layout(
             yaxis_tickprefix="$",
-            template="plotly_white",
+            template=chart_template,
             showlegend=False,
             margin=dict(l=40, r=40, t=70, b=40),
         )
@@ -194,6 +491,50 @@ def register_callbacks(app, df: pd.DataFrame) -> None:
             bar_fig,
             box_fig,
             table_data,
+            style_header,
+            style_cell,
+            style_data_conditional,
+        )
+
+    @app.callback(
+        Output("export-csv-download", "data"),
+        Input("export-csv-button", "n_clicks"),
+        State("manufacturer-filter", "value"),
+        State("model-search", "value"),
+        State("state-filter", "value"),
+        State("condition-filter", "value"),
+        State("fuel-filter", "value"),
+        State("transmission-filter", "value"),
+        State("year-filter", "value"),
+        State("mileage-filter", "value"),
+        prevent_initial_call=True,
+    )
+    def export_csv(
+        _n_clicks,
+        selected_manufacturer,
+        model_search,
+        selected_state,
+        selected_conditions,
+        selected_fuel,
+        selected_transmission,
+        selected_years,
+        selected_mileage,
+    ):
+        filtered_df = filter_listings(
+            df,
+            selected_manufacturer,
+            model_search,
+            selected_state,
+            selected_conditions,
+            selected_fuel,
+            selected_transmission,
+            selected_years,
+            selected_mileage,
+        )
+        return dcc.send_data_frame(
+            filtered_df.sort_values("deal_score", ascending=False).to_csv,
+            "used_car_deals.csv",
+            index=False,
         )
 
     @app.callback(
@@ -278,9 +619,7 @@ def register_callbacks(app, df: pd.DataFrame) -> None:
                 description[:500] + "..." if len(description) > 500 else description
             )
             detail_items.append(html.H5("Listing Description"))
-            detail_items.append(
-                html.P(description_preview, className="listing-description")
-            )
+            detail_items.append(html.P(description_preview, className="listing-description"))
 
         if "url" in row and pd.notna(row["url"]):
             detail_items.append(
