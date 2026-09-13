@@ -13,6 +13,10 @@ An interactive Dash dashboard for exploring used car listings and surfacing pote
 - **Interactive charts**: price vs. mileage scatter plot, top 10 potential deals, and price distribution by condition
 - **Click-to-inspect**: click any point or bar to pull up full listing details, including description and a link to the original posting
 - **Sortable/filterable results table** with conditional formatting highlighting strong and weak deals
+- **Shareable filter URLs**: the current filters are reflected in the URL as you change them, so any view can be bookmarked or shared — plus a one-click "Copy Link" button
+- **CSV export** of every listing matching the current filters (not just the page shown in the table)
+- **Dark mode**, persisted across visits
+- Loading indicators and a collapsible filter panel on mobile
 
 ## Tech stack
 
@@ -36,7 +40,8 @@ used-car-deal-finder/
 ├── data/
 │   └── used_cars_sample.csv # ~8,000-row sample used by the live app
 ├── tests/
-│   └── test_data.py         # pytest coverage for load_data()
+│   ├── test_data.py         # pytest coverage for load_data()
+│   └── test_callbacks.py    # pytest coverage for the URL <-> filter helpers
 ├── assets/
 │   └── style.css
 ├── pyproject.toml           # ruff configuration
