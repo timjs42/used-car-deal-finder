@@ -2,7 +2,7 @@
 
 import pandas as pd
 import plotly.express as px
-from dash import Input, Output, State, html
+from dash import Input, Output, State, dcc, html
 
 TABLE_ROW_COLORS = {
     "light": {
@@ -23,6 +23,46 @@ TABLE_BASE_STYLE = {
     "light": {"header_bg": "#f3f4f6", "header_text": "#14171c", "row_text": "#14171c"},
     "dark": {"header_bg": "#2b303a", "header_text": "#f1f0ec", "row_text": "#f1f0ec"},
 }
+
+
+def filter_listings(
+    df,
+    selected_manufacturer,
+    model_search,
+    selected_state,
+    selected_conditions,
+    selected_fuel,
+    selected_transmission,
+    selected_years,
+    selected_mileage,
+):
+    """Apply the sidebar filters to df and return the matching rows."""
+    filtered_df = df
+
+    if selected_manufacturer:
+        filtered_df = filtered_df[filtered_df["manufacturer"] == selected_manufacturer]
+
+    if model_search:
+        filtered_df = filtered_df[filtered_df["model"].str.contains(model_search.lower(), na=False)]
+
+    if selected_state:
+        filtered_df = filtered_df[filtered_df["state"] == selected_state]
+
+    if selected_conditions:
+        filtered_df = filtered_df[filtered_df["condition"].isin(selected_conditions)]
+
+    if selected_fuel:
+        filtered_df = filtered_df[filtered_df["fuel"] == selected_fuel]
+
+    if selected_transmission != "all":
+        filtered_df = filtered_df[filtered_df["transmission"] == selected_transmission]
+
+    return filtered_df[
+        (filtered_df["year"] >= selected_years[0])
+        & (filtered_df["year"] <= selected_years[1])
+        & (filtered_df["odometer"] >= selected_mileage[0])
+        & (filtered_df["odometer"] <= selected_mileage[1])
+    ]
 
 
 def register_callbacks(app, df: pd.DataFrame) -> None:
@@ -127,34 +167,17 @@ def register_callbacks(app, df: pd.DataFrame) -> None:
             },
         ]
 
-        filtered_df = df
-
-        if selected_manufacturer:
-            filtered_df = filtered_df[filtered_df["manufacturer"] == selected_manufacturer]
-
-        if model_search:
-            filtered_df = filtered_df[
-                filtered_df["model"].str.contains(model_search.lower(), na=False)
-            ]
-
-        if selected_state:
-            filtered_df = filtered_df[filtered_df["state"] == selected_state]
-
-        if selected_conditions:
-            filtered_df = filtered_df[filtered_df["condition"].isin(selected_conditions)]
-
-        if selected_fuel:
-            filtered_df = filtered_df[filtered_df["fuel"] == selected_fuel]
-
-        if selected_transmission != "all":
-            filtered_df = filtered_df[filtered_df["transmission"] == selected_transmission]
-
-        filtered_df = filtered_df[
-            (filtered_df["year"] >= selected_years[0])
-            & (filtered_df["year"] <= selected_years[1])
-            & (filtered_df["odometer"] >= selected_mileage[0])
-            & (filtered_df["odometer"] <= selected_mileage[1])
-        ]
+        filtered_df = filter_listings(
+            df,
+            selected_manufacturer,
+            model_search,
+            selected_state,
+            selected_conditions,
+            selected_fuel,
+            selected_transmission,
+            selected_years,
+            selected_mileage,
+        )
 
         if filtered_df.empty:
             empty_fig = px.scatter(title="No listings match the selected filters.")
@@ -291,6 +314,47 @@ def register_callbacks(app, df: pd.DataFrame) -> None:
             style_header,
             style_cell,
             style_data_conditional,
+        )
+
+    @app.callback(
+        Output("export-csv-download", "data"),
+        Input("export-csv-button", "n_clicks"),
+        State("manufacturer-filter", "value"),
+        State("model-search", "value"),
+        State("state-filter", "value"),
+        State("condition-filter", "value"),
+        State("fuel-filter", "value"),
+        State("transmission-filter", "value"),
+        State("year-filter", "value"),
+        State("mileage-filter", "value"),
+        prevent_initial_call=True,
+    )
+    def export_csv(
+        _n_clicks,
+        selected_manufacturer,
+        model_search,
+        selected_state,
+        selected_conditions,
+        selected_fuel,
+        selected_transmission,
+        selected_years,
+        selected_mileage,
+    ):
+        filtered_df = filter_listings(
+            df,
+            selected_manufacturer,
+            model_search,
+            selected_state,
+            selected_conditions,
+            selected_fuel,
+            selected_transmission,
+            selected_years,
+            selected_mileage,
+        )
+        return dcc.send_data_frame(
+            filtered_df.sort_values("deal_score", ascending=False).to_csv,
+            "used_car_deals.csv",
+            index=False,
         )
 
     @app.callback(

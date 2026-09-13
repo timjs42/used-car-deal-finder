@@ -219,7 +219,19 @@ def build_layout(df: pd.DataFrame) -> html.Div:
                             html.Div(
                                 className="table-section",
                                 children=[
-                                    html.H3("Top Matching Listings"),
+                                    html.Div(
+                                        className="table-section-header",
+                                        children=[
+                                            html.H3("Top Matching Listings"),
+                                            html.Button(
+                                                "Export CSV",
+                                                id="export-csv-button",
+                                                className="export-button",
+                                                n_clicks=0,
+                                            ),
+                                            dcc.Download(id="export-csv-download"),
+                                        ],
+                                    ),
                                     html.P(
                                         "The table below shows the best matching listings based "
                                         "on the current filters. Higher deal scores suggest that "
