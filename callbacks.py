@@ -36,7 +36,7 @@ def register_callbacks(app, df: pd.DataFrame) -> None:
         selected_years,
         selected_mileage,
     ):
-        filtered_df = df.copy()
+        filtered_df = df
 
         if selected_manufacturer:
             filtered_df = filtered_df[filtered_df["manufacturer"] == selected_manufacturer]

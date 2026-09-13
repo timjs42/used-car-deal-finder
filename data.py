@@ -65,9 +65,7 @@ def load_data(path: Path = DATA_PATH) -> pd.DataFrame:
     ]
     for col in text_columns:
         if col in df.columns:
-            df[col] = df[col].apply(
-                lambda value: str(value).lower().strip() if pd.notna(value) else value
-            )
+            df[col] = df[col].str.lower().str.strip()
 
     # limit size for performance
     df = df.sample(n=min(50000, len(df)), random_state=42)
